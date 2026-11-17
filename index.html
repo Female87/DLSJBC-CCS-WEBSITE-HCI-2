@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Figma Make App</title>
+    
+    <title>College of Computer Studies | DLSJBC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="description" content="This web application streamlines project management by providing intuitive task tracking and collaboration tools for teams, enhancing productivity and efficiency.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta property="og:title" content="Figma Make App">
+    <meta property="og:description" content="This web application streamlines project management by providing intuitive task tracking and collaboration tools for teams, enhancing productivity and efficiency.">
+    <script>
+      if (location.protocol === 'file:') {
+        const target = 'http://localhost:8000/';
+        if (location.href !== target) {
+          location.replace(target);
+        }
+      }
+    </script>
+    <script type="module" crossorigin src="./app.js"></script>
+    <link rel="stylesheet" crossorigin href="./styles.css">
+    <style>
+      .update-scope-control {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-muted);
+        font-size: .82rem;
+        font-weight: 700;
+      }
+
+      .update-scope-control select {
+        min-height: 36px;
+        padding: 6px 30px 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-card);
+        color: var(--text-dark);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .update-view-all-button {
+        min-height: 36px;
+        padding: 6px 12px;
+        margin-left: auto;
+        border: 1px solid var(--lasalle-green);
+        border-radius: 999px;
+        background: var(--lasalle-green-subtle);
+        color: var(--lasalle-green);
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .filter-toolbar {
+        justify-content: center;
+      }
+
+      .filter-toolbar-label {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .update-headline-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: -12px 0 24px;
+      }
+
+      .update-headline-nav button {
+        max-width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        background: var(--bg-card);
+        color: var(--text-dark);
+        font: inherit;
+        font-size: .82rem;
+        text-align: left;
+        cursor: pointer;
+        transition: var(--transition-fast);
+      }
+
+      .update-headline-nav button:hover,
+      .update-headline-nav button[aria-current="true"] {
+        border-color: var(--lasalle-green);
+        background: var(--lasalle-green-subtle);
+        color: var(--lasalle-green);
+      }
+
+      .update-headline-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .update-headline-row .update-category-nav-button {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+      }
+
+      .update-headline-row .update-headline-button {
+        flex: 1 1 auto;
+        border-radius: 12px;
+      }
+
+      .update-item-focused {
+        outline: 3px solid var(--lasalle-green);
+        outline-offset: 4px;
+        border-radius: 8px;
+        scroll-margin-top: 120px;
+      }
+    </style>
+    <script>
+      (() => {
+        const categoryStyles = {
+          urgent: { color: '#d32f2f', background: '#ffe8e8', border: '#d32f2f66' },
+          academic: { color: '#005a36', background: '#e6f2eb', border: '#005a3666' },
+          lab: { color: '#e65100', background: '#fff8e1', border: '#e6510066' },
+          scholarship: { color: '#0277bd', background: '#e8f4fd', border: '#0277bd66' },
+          all: { color: '#176b3a', background: 'var(--bg-alt)', border: 'var(--border-color)' }
+        };
+        const categoryColorStorageKey = 'dlsjbc_update_category_colors';
+        const savedCategoryColors = JSON.parse(localStorage.getItem(categoryColorStorageKey) || '{}');
+        const updateScopes = {
+          all: 'All updates',
+          news: 'Latest News',
+          announcements: 'Announcements',
+          events: 'Upcoming Events',
+          quicklinks: 'Quick Links'
+        };
+        let selectedUpdateScope = 'all';
+        let hasFocusedUpdate = false;
+        let focusedHeadline = null;
+        const originalHeadlineDisplays = new WeakMap();
+
+        Object.keys(categoryStyles).forEach((category) => {
+          const color = savedCategoryColors[category];
+          if (category !== 'all' && typeof color === 'string' && /^#[\da-f]{6}$/i.test(color)) {
+            categoryStyles[category].color = color;
+            categoryStyles[category].background = `${color}1A`;
+            categoryStyles[category].border = `${color}66`;
+          }
+        });
+
+        function saveCategoryColors() {
+          const colors = {};
+          Object.keys(categoryStyles).forEach((category) => {
+            if (category !== 'all') colors[category] = categoryStyles[category].color;
+          });
+          localStorage.setItem(categoryColorStorageKey, JSON.stringify(colors));
+        }
+
+        function activateCategoryFilter(categoryName) {
+          const chips = document.querySelector('.filter-chips');
+          const chip = Array.from(chips?.querySelectorAll('.filter-chip') || []).find((candidate) => {
+            return candidate.textContent.trim().toLowerCase() === categoryName.toLowerCase();
+          });
+          if (!chips || !chip) return;
+
+          const previousChipsDisplay = chips.style.display;
+          const previousChipDisplay = chip.style.display;
+          chips.style.display = '';
+          chip.style.display = '';
+          chip.click();
+          chip.style.display = previousChipDisplay;
+          chips.style.display = previousChipsDisplay;
+        }
+
+        function setUpdateScope(scope) {
+          hasFocusedUpdate = false;
+          focusedHeadline = null;
+          restoreHeadlineDisplays();
+          document.querySelectorAll('.update-headline-nav [aria-current="true"]').forEach((button) => {
+            button.removeAttribute('aria-current');
+          });
+          removeViewAllButton();
+          activateCategoryFilter('All updates');
+          selectedUpdateScope = scope;
+          applyUpdateCategoryPresentation();
+        }
+
+        function addCategoryColorCustomizer(toolbar) {
+          if (!document.querySelector('[aria-label="Administrator controls"]') ||
+              toolbar.querySelector('.update-category-customizer')) return;
+
+          const customizer = document.createElement('details');
+          customizer.className = 'update-category-customizer';
+          customizer.style.position = 'relative';
+
+          const summary = document.createElement('summary');
+          summary.textContent = 'Customize colors';
+          summary.style.cssText = 'cursor:pointer;color:var(--lasalle-green);font-size:.82rem;font-weight:700;';
+          customizer.appendChild(summary);
+
+          const controls = document.createElement('div');
+          controls.style.cssText = 'position:absolute;right:0;top:calc(100% + 8px);z-index:20;display:grid;gap:8px;min-width:190px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-card);box-shadow:var(--shadow-md);';
+
+          Object.keys(categoryStyles).filter((category) => category !== 'all').forEach((category) => {
+            const label = document.createElement('label');
+            label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-dark);font-size:.82rem;';
+            label.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.value = categoryStyles[category].color;
+            colorInput.setAttribute('aria-label', `${label.textContent} update color`);
+            colorInput.style.cssText = 'width:34px;height:28px;padding:0;border:0;background:transparent;cursor:pointer;';
+            colorInput.addEventListener('input', () => {
+              const color = colorInput.value;
+              categoryStyles[category].color = color;
+              categoryStyles[category].background = `${color}1A`;
+              categoryStyles[category].border = `${color}66`;
+              saveCategoryColors();
+              applyUpdateCategoryPresentation();
+            });
+
+            label.appendChild(colorInput);
+            controls.appendChild(label);
+          });
+
+          customizer.appendChild(controls);
+          toolbar.appendChild(customizer);
+        }
+
+        function addUpdateScopeControl(toolbar) {
+          if (toolbar.querySelector('.update-scope-control')) return;
+
+          const label = document.createElement('label');
+          label.className = 'update-scope-control';
+
+          const select = document.createElement('select');
+          select.setAttribute('aria-label', 'Choose update section');
+          Object.keys(updateScopes).forEach((scope) => {
+            const option = document.createElement('option');
+            option.value = scope;
+            option.textContent = updateScopes[scope];
+            select.appendChild(option);
+          });
+          select.value = selectedUpdateScope;
+          select.addEventListener('change', () => {
+            setUpdateScope(select.value);
+          });
+
+          label.appendChild(select);
+          const categoryLabel = toolbar.querySelector('.filter-toolbar-label');
+          const chips = toolbar.querySelector('.filter-chips');
+          if (categoryLabel) {
+            categoryLabel.appendChild(label);
+          } else {
+            toolbar.insertBefore(label, chips || null);
+          }
+        }
+
+        function removeViewAllButton() {
+          document.querySelectorAll('.info-card-header .update-view-all-button').forEach((button) => {
+            button.remove();
+          });
+        }
+
+        function showViewAllButton() {
+          const card = getUpdateCard(selectedUpdateScope);
+          const header = card?.querySelector('.info-card-header');
+          if (!header || header.querySelector('.update-view-all-button')) return;
+
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'update-view-all-button';
+          button.textContent = 'View All';
+          button.addEventListener('click', resetSelectedUpdateView);
+          header.appendChild(button);
+        }
+
+        function restoreHeadlineDisplays() {
+          document.querySelectorAll('.news-item, .event-item, .quick-link-btn').forEach((item) => {
+            if (!originalHeadlineDisplays.has(item)) return;
+            item.style.display = originalHeadlineDisplays.get(item);
+            originalHeadlineDisplays.delete(item);
+          });
+        }
+
+        function resetSelectedUpdateView() {
+          hasFocusedUpdate = false;
+          focusedHeadline = null;
+          restoreHeadlineDisplays();
+          document.querySelectorAll('.update-headline-nav [aria-current="true"]').forEach((button) => {
+            button.removeAttribute('aria-current');
+          });
+          if (selectedUpdateScope === 'announcements') activateCategoryFilter('All updates');
+          removeViewAllButton();
+          applyUpdateCategoryPresentation();
+        }
+
+        function getUpdateCard(scope) {
+          const title = updateScopes[scope];
+          return Array.from(document.querySelectorAll('.info-card')).find((card) => {
+            return card.querySelector('.info-card-title')?.textContent.trim() === title;
+          });
+        }
+
+        function getHeadlineTargets(scope, card) {
+          if (!card) return [];
+
+          const selectors = {
+            news: ['.news-item', '.news-headline'],
+            announcements: ['.announcement-item', '.announcement-text'],
+            events: ['.event-item', '.event-name'],
+            quicklinks: ['.quick-link-btn', null]
+          };
+          const [itemSelector, titleSelector] = selectors[scope] || [];
+          if (!itemSelector) return [];
+
+          return Array.from(card.querySelectorAll(itemSelector)).map((item) => {
+            const title = item.querySelector(titleSelector)?.textContent.trim() || item.textContent.trim();
+            const badge = scope === 'announcements' ? item.querySelector('.announcement-badge') : null;
+            const categoryKey = Array.from(badge?.classList || []).find((name) => {
+              return name.startsWith('badge-');
+            })?.slice(6) || '';
+            return { item, title, category: badge?.textContent.trim() || '', categoryKey };
+          }).filter((entry) => entry.title);
+        }
+
+        function focusHeadline(scope, index, button) {
+          const card = getUpdateCard(scope);
+          const entry = getHeadlineTargets(scope, card)[index];
+          if (!entry) return;
+
+          focusedHeadline = { scope, title: entry.title };
+          hasFocusedUpdate = true;
+          applyHeadlineFocus();
+          showViewAllButton();
+          document.querySelectorAll('.update-headline-nav .update-headline-button').forEach((navButton) => {
+            navButton.removeAttribute('aria-current');
+          });
+          button.setAttribute('aria-current', 'true');
+          const target = entry.item;
+          target.setAttribute('tabindex', '-1');
+          target.classList.add('update-item-focused');
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.focus({ preventScroll: true });
+          window.setTimeout(() => target.classList.remove('update-item-focused'), 1800);
+        }
+
+        function applyHeadlineFocus() {
+          restoreHeadlineDisplays();
+          if (!focusedHeadline || focusedHeadline.scope !== selectedUpdateScope) return;
+
+          const entries = getHeadlineTargets(focusedHeadline.scope, getUpdateCard(focusedHeadline.scope));
+          const target = entries.find((entry) => entry.title === focusedHeadline.title)?.item;
+          if (!target) return;
+
+          entries.forEach(({ item }) => {
+            originalHeadlineDisplays.set(item, item.style.display);
+            if (item !== target) item.style.display = 'none';
+          });
+        }
+
+        function styleCategoryNavigationButton(button, category) {
+          const styles = categoryStyles[category] || categoryStyles.all;
+          const isSelected = button.getAttribute('aria-pressed') === 'true';
+          button.style.color = isSelected ? '#fff' : styles.color;
+          button.style.backgroundColor = isSelected ? styles.color : styles.background;
+          button.style.borderColor = styles.border;
+        }
+
+        function updateHeadlineNavigation(toolbar) {
+          let navigation = toolbar.nextElementSibling;
+          if (!navigation?.classList.contains('update-headline-nav')) {
+            navigation = document.createElement('nav');
+            navigation.className = 'update-headline-nav';
+            navigation.setAttribute('aria-label', 'Update headlines');
+            toolbar.insertAdjacentElement('afterend', navigation);
+          }
+
+          const targets = getHeadlineTargets(selectedUpdateScope, getUpdateCard(selectedUpdateScope));
+          const isAnnouncementScope = selectedUpdateScope === 'announcements';
+          const categories = Object.keys(categoryStyles).filter((category) => category !== 'all');
+          const signature = isAnnouncementScope
+            ? `announcements|${categories.join('|')}`
+            : `${selectedUpdateScope}|${targets.map((entry) => entry.title).join('|')}`;
+          if (isAnnouncementScope) {
+            navigation.querySelectorAll('.update-category-nav-button').forEach((button) => {
+              const filterChip = Array.from(document.querySelectorAll('.filter-chip')).find((chip) => {
+                return chip.textContent.trim().toLowerCase() === button.textContent.trim().toLowerCase();
+              });
+              button.setAttribute('aria-pressed', filterChip?.getAttribute('aria-pressed') === 'true' ? 'true' : 'false');
+              styleCategoryNavigationButton(button, button.dataset.category);
+            });
+          }
+          if (navigation.dataset.signature === signature) return;
+
+          navigation.dataset.signature = signature;
+          navigation.replaceChildren();
+          const isSectionSelected = selectedUpdateScope !== 'all';
+          navigation.hidden = !isSectionSelected || (isAnnouncementScope ? categories.length === 0 : targets.length === 0);
+          if (!isSectionSelected) return;
+
+          navigation.setAttribute(
+            'aria-label',
+            isAnnouncementScope
+              ? 'Announcement categories'
+              : selectedUpdateScope === 'quicklinks'
+                ? 'Quick link destinations'
+                : `${updateScopes[selectedUpdateScope]} headlines`
+          );
+          if (isAnnouncementScope) {
+            categories.forEach((category) => {
+              const button = document.createElement('button');
+              const filterChip = Array.from(document.querySelectorAll('.filter-chip')).find((chip) => {
+                return chip.textContent.trim().toLowerCase() === category;
+              });
+              button.type = 'button';
+              button.className = 'update-category-nav-button';
+              button.dataset.category = category;
+              button.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+              button.setAttribute('aria-label', `Filter announcements by ${button.textContent}`);
+              button.setAttribute('aria-pressed', filterChip?.getAttribute('aria-pressed') === 'true' ? 'true' : 'false');
+              styleCategoryNavigationButton(button, category);
+              button.addEventListener('click', () => {
+                activateCategoryFilter(button.textContent);
+                hasFocusedUpdate = true;
+                showViewAllButton();
+              });
+              navigation.appendChild(button);
+            });
+            return;
+          }
+
+          targets.forEach((entry, index) => {
+            const row = document.createElement('div');
+            row.className = 'update-headline-row';
+
+            const headlineButton = document.createElement('button');
+            headlineButton.type = 'button';
+            headlineButton.className = 'update-headline-button';
+            headlineButton.textContent = entry.title;
+            if (focusedHeadline?.scope === selectedUpdateScope && focusedHeadline.title === entry.title) {
+              headlineButton.setAttribute('aria-current', 'true');
+            }
+            headlineButton.addEventListener('click', () => focusHeadline(selectedUpdateScope, index, headlineButton));
+            row.appendChild(headlineButton);
+            navigation.appendChild(row);
+          });
+        }
+
+        function applyUpdateScope(toolbar) {
+          const isAllUpdates = selectedUpdateScope === 'all';
+          const isAnnouncementScope = selectedUpdateScope === 'announcements';
+          const grid = document.querySelector('.info-grid');
+
+          if (grid) grid.style.gridTemplateColumns = isAllUpdates ? '' : '1fr';
+          document.querySelectorAll('.info-card').forEach((card) => {
+            const title = card.querySelector('.info-card-title')?.textContent.trim();
+            const shouldShow = isAllUpdates || title === updateScopes[selectedUpdateScope];
+            card.style.display = shouldShow ? '' : 'none';
+          });
+
+          const categoryLabel = toolbar.querySelector('.filter-toolbar-label');
+          const categoryChips = toolbar.querySelector('.filter-chips');
+          if (categoryLabel) categoryLabel.style.display = '';
+          if (categoryChips) categoryChips.style.display = 'none';
+          const categoryCustomizer = toolbar.querySelector('.update-category-customizer');
+          if (categoryCustomizer) categoryCustomizer.style.display = isAnnouncementScope ? '' : 'none';
+
+          const scopeControl = toolbar.querySelector('.update-scope-control select');
+          if (scopeControl) scopeControl.value = selectedUpdateScope;
+          updateHeadlineNavigation(toolbar);
+          applyHeadlineFocus();
+          if (hasFocusedUpdate && !isAllUpdates) showViewAllButton();
+          else removeViewAllButton();
+        }
+
+        function applyUpdateCategoryPresentation() {
+          const toolbar = document.querySelector('.filter-toolbar');
+          if (toolbar) {
+            addUpdateScopeControl(toolbar);
+            addCategoryColorCustomizer(toolbar);
+          }
+
+          const label = document.querySelector('.filter-toolbar-label');
+          if (label) {
+            Array.from(label.childNodes).forEach((node) => {
+              if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                node.textContent = ' Updates';
+              }
+            });
+          }
+
+          document.querySelectorAll('.filter-chip').forEach((chip) => {
+            const category = (chip.textContent || '').trim().toLowerCase();
+            const styles = categoryStyles[category] || categoryStyles.all;
+            const isSelected = chip.getAttribute('aria-pressed') === 'true';
+
+            chip.style.color = isSelected ? '#fff' : styles.color;
+            chip.style.backgroundColor = isSelected ? styles.color : styles.background;
+            chip.style.borderColor = styles.border;
+            chip.style.fontWeight = isSelected ? '700' : '600';
+            chip.style.boxShadow = isSelected ? '0 2px 6px rgba(0, 0, 0, 0.12)' : '';
+          });
+
+          Object.keys(categoryStyles).filter((category) => category !== 'all').forEach((category) => {
+            document.querySelectorAll(`.announcement-badge.badge-${category}`).forEach((badge) => {
+              badge.style.color = categoryStyles[category].color;
+              badge.style.backgroundColor = categoryStyles[category].background;
+              badge.style.borderColor = categoryStyles[category].border;
+            });
+
+            document.querySelectorAll(`.update-category-nav-button[data-category="${category}"]`).forEach((button) => {
+              styleCategoryNavigationButton(button, category);
+            });
+          });
+
+          if (toolbar) applyUpdateScope(toolbar);
+        }
+
+        const initializeUpdateCategoryPresentation = () => {
+          const observer = new MutationObserver(() => {
+            requestAnimationFrame(applyUpdateCategoryPresentation);
+          });
+
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'aria-pressed']
+          });
+
+          applyUpdateCategoryPresentation();
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initializeUpdateCategoryPresentation, { once: true });
+        } else {
+          initializeUpdateCategoryPresentation();
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
