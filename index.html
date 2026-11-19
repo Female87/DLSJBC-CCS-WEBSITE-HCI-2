@@ -121,6 +121,64 @@
         border-radius: 8px;
         scroll-margin-top: 120px;
       }
+
+      .site-footer .footer-grid {
+        align-items: start;
+        column-gap: 28px;
+        row-gap: 32px;
+      }
+
+      .site-footer .footer-grid > * {
+        min-width: 0;
+      }
+
+      .site-footer .footer-contact-item i {
+        flex: 0 0 16px;
+        text-align: center;
+      }
+
+      .site-footer .footer-bottom {
+        align-items: flex-start;
+      }
+
+      .site-footer .footer-legal-links {
+        flex-wrap: wrap;
+        row-gap: 10px;
+      }
+
+      .site-footer .footer-legal-links a {
+        display: inline-flex;
+        transition: var(--transition-fast);
+      }
+
+      .site-footer .footer-legal-links a:hover {
+        transform: translateY(-2px);
+      }
+
+      @media (max-width: 580px) {
+        .site-footer {
+          padding-top: 40px;
+        }
+
+        .site-footer .footer-grid {
+          row-gap: 24px;
+          margin-bottom: 28px;
+        }
+
+        .site-footer .footer-bottom {
+          gap: 12px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .site-footer .footer-legal-links a {
+          transition: none;
+        }
+
+        .site-footer .footer-legal-links a:hover {
+          transform: none;
+        }
+      }
     </style>
     <script>
       (() => {

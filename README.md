@@ -30,6 +30,3 @@ Then open:
 ## Design source
 
 - https://spruce-click-87870036.figma.site/
-
-## Github Link:
-- https://female87.github.io/DLSJBC-CCS-WEBSITE-HCI-2/

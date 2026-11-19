@@ -1,0 +1,36 @@
+DLSJBC CCS WEBSITE - PRESENTATION CHANGE NOTES
+Slide-ready notes comparing the original Figma prototype with this project.
+
+BEFORE
+Original Figma Make app:
+https://spruce-click-87870036.figma.site/
+
+AFTER
+Updated local project:
+http://localhost:8000 (available while the local preview server is running)
+
+SLIDE 1 - UPDATES AND ANNOUNCEMENTS
+- Added an update-section selector for All Updates, Latest News, Announcements, Upcoming Events, and Quick Links.
+- Added announcement category navigation for Urgent, Academic, Lab, and Scholarship announcements.
+- Category colors are applied consistently to announcement badges, filter chips, and navigation buttons.
+- Admins can customize category colors; the choices are saved in the browser for later visits.
+- Selecting an update headline focuses and highlights the matching item, with a View All control to restore the full list.
+- Selecting a section presents its content on its own and keeps the selected section synchronized with the selector.
+
+SLIDE 2 - DIRECTORY LABEL
+- Changed the directory tab label from "Enrollment" to "Population" to better describe the student-population section.
+
+SLIDE 3 - VALIDATION
+- Verified the Population label and footer interactions in the browser.
+- Verified the footer hover transition and reduced-motion behavior.
+
+FILES UPDATED
+- index.html - update and announcement controls, plus footer layout and transition styles.
+- app.js - directory tab label.
+
+SLIDE 4 - FOOTER CHANGES
+- Panelist feedback called for improved footer alignment and spacing.
+- Contact icons now use a consistent 16px alignment slot.
+- Footer columns align to the start, with balanced column and row gaps.
+- Legal links have a smooth 200ms hover transition with a subtle upward lift.
+- Reduced-motion preferences are respected; hover movement is disabled for users who request reduced motion.
